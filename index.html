@@ -104,7 +104,6 @@ var SID="1BGH0Lg_krU3zxAP7MnPmXgBcHH-D83qcPOow5nyYQTg";
 var GVIZ="https://docs.google.com/spreadsheets/d/"+SID+"/gviz/tq?tqx=out:csv&sheet=";
 var TODAY=new Date();TODAY.setDate(1);TODAY.setHours(0,0,0,0);
 var SHEETS=["Delmiro1","Paulistana1","Paulistana2","Paulistana3","Tiradentes","Jaicó1","Jaicó2","Jaicó3","Barcarena1","Barcarena2","Cametá4"];
-var SHEETS_DISPLAY=["Delmiro1","Paulistana1","Paulistana2","Paulistana3","Tiradentes","Jaicó1","Jaicó2","Jaicó3","Barcarena1","Barcarena2","Cametá4"];
 var MNAMES=["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
 var MMAP={jan:0,fev:1,mar:2,abr:3,mai:4,jun:5,jul:6,ago:7,set:8,out:9,nov:10,dez:11};
 var C={goldL:"#E2C47A",green:"#4CAF7A",blue:"#4A90D9",purple:"#9B59B6",bar:"rgba(201,168,76,0.55)"};
@@ -367,12 +366,14 @@ function renderGeral(el){
   var p50Arr=months.map(function(m){return m.p50n>0?m.p50/1000:null;});
 
   var gc=document.createElement("div");gc.className="cc";
-  gc.innerHTML='<div class="ct">Geracao Consolidada (MWh)</div><div class="cto"><button class="tb on" id="tgct">Contratual</button><button class="tb on" id="tgp50">P50</button></div><div class="cw" style="height:260px"><canvas id="cg"></canvas></div>';
+  gc.innerHTML='<div class="ct">Geracao Consolidada (MWh)</div><div class="cto"><button class="tb on" id="tgct">Contratual</button><button class="tb on" id="tgp50">P50</button></div>';
+  var gcw=document.createElement("div");gcw.className="cw";gcw.style.height="260px";
+  var gcv=document.createElement("canvas");
+  gcw.appendChild(gcv);gc.appendChild(gcw);
   el.appendChild(gc);
 
   requestAnimationFrame(function(){requestAnimationFrame(function(){
-    var ctx=document.getElementById("cg");if(!ctx)return;
-    charts["cg"]=new Chart(ctx,{
+    charts["cg"]=new Chart(gcv,{
       data:{labels:labels,datasets:[
         {type:"bar",label:"Injetada",data:concArr,backgroundColor:C.bar,borderWidth:0,order:3},
         {type:"line",label:"Contratual",data:ctArr,borderColor:C.goldL,borderWidth:2,borderDash:[5,3],pointRadius:0,tension:.3,fill:false,order:1},
@@ -403,7 +404,7 @@ function renderUsina(name,el){
   var allRows=allData[name]||[];
   if(!allRows.length){el.innerHTML='<div style="padding:20px;color:var(--text3)">Sem dados disponiveis.</div>';return;}
   var rows=applyFilter(allRows);
-  var pl=filterStart&&filterEnd?fmtDate(filterStart)+" - "+fmtDate(filterEnd):"Periodo completo";
+  var pl=allRows[0].dateStr+" - "+allRows[allRows.length-1].dateStr;
   var title=document.createElement("div");title.className="st";title.textContent=name;el.appendChild(title);
   var totC=sum(rows,"conc"),totCt=sum(rows,"contrat"),totCp=sum(rows,"comp");
   var totRx=rows.reduce(function(a,r){return a+(r.conc&&r.vur?r.conc*r.vur:0);},0);
