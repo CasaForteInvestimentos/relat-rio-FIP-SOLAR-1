@@ -354,7 +354,7 @@ function renderGeral(el){
     kcard("Energia Total Injetada",(totC/1000).toLocaleString("pt-BR",{minimumFractionDigits:1,maximumFractionDigits:1}),"MWh","Concessionaria - periodo filtrado")+
     kcard("Energia Contratual",(totCt/1000).toLocaleString("pt-BR",{minimumFractionDigits:1,maximumFractionDigits:1}),"MWh","Total contratado no periodo")+
     kcard("Energia Compensada",(totCp/1000).toLocaleString("pt-BR",{minimumFractionDigits:1,maximumFractionDigits:1}),"MWh","Total compensada no periodo")+
-    kcard("Receita Total Estimada",fmtBRL(totRec),"","VUR x Concessionaria")+
+    kcard("Receita Total Estimada",fmtBRL(totRec),"","")+
     '<div class="kc"><div class="kl">Performance Geral</div><div class="kd">'+(devPct!=null?(devPct>=0?"+":"")+devPct.toFixed(1)+"%":"--")+'</div><div class="kp '+devCls(devPct)+'">'+(ratio!=null?fmtPct(ratio)+" do contratual":"--")+'</div></div>'+
     kcard("Usinas Ativas",usinas.length,"usinas",(SHEETS.length-usinas.length)+" em implantacao");
   el.appendChild(kg);
@@ -417,7 +417,7 @@ function renderUsina(name,el){
     kcard("Contratual Total",totCt>0?(totCt/1000).toLocaleString("pt-BR",{minimumFractionDigits:1,maximumFractionDigits:1}):"--",totCt>0?"MWh":"",pl)+
     '<div class="kc"><div class="kl">Performance Acumulada</div><div class="kd">'+(devPct!=null?(devPct>=0?"+":"")+devPct.toFixed(1)+"%":"--")+'</div><div class="kp '+devCls(devPct)+'">'+(ratio!=null?fmtPct(ratio)+" do contratual":"--")+'</div></div>'+
     kcard("Energia Compensada",rows.length?(totCp/1000).toLocaleString("pt-BR",{minimumFractionDigits:1,maximumFractionDigits:1}):"--",rows.length?"MWh":"",pl)+
-    kcard("Receita Estimada",fmtBRL(totRx),"","VUR x Concessionaria");
+    kcard("Receita Estimada",fmtBRL(totRx),"",totCp>0?"VUR x Compensada":"VUR x Concessionaria");
   el.appendChild(kg);
 
   var labels=rows.map(function(r){return r.dateStr;});
