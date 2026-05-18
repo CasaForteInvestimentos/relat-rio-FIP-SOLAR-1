@@ -340,7 +340,7 @@ function renderGeral(el){
       if(r.comp!=null)totCp+=r.comp;
       if(r.conc!=null&&r.vur!=null)totRec+=r.conc*r.vur;
       var k=r.dateStr;
-      if(!mmap[k])mmap[k]={date:r.date,conc:0,contrat:0,p50:0,p50n:0};
+      if(!mmap[k])mmap[k]={date:r.date,dateStr:r.dateStr,conc:0,contrat:0,p50:0,p50n:0};
       if(r.conc!=null)mmap[k].conc+=r.conc;
       if(r.contrat!=null)mmap[k].contrat+=r.contrat;
       if(r.p50!=null){mmap[k].p50+=r.p50;mmap[k].p50n++;}
@@ -372,7 +372,7 @@ function renderGeral(el){
   gcw.appendChild(gcv);gc.appendChild(gcw);
   el.appendChild(gc);
 
-  requestAnimationFrame(function(){requestAnimationFrame(function(){
+  setTimeout(function(){
     charts["cg"]=new Chart(gcv,{
       data:{labels:labels,datasets:[
         {type:"bar",label:"Injetada",data:concArr,backgroundColor:C.bar,borderWidth:0,order:3},
@@ -383,7 +383,7 @@ function renderGeral(el){
     });
     setupToggle("tgct",charts["cg"],1);
     setupToggle("tgp50",charts["cg"],2);
-  });});
+  },50);
 
   var dv=document.createElement("div");dv.className="dv";el.appendChild(dv);
   var tt=document.createElement("div");tt.className="st";tt.style.fontSize="16px";tt.textContent="Resumo por Usina";el.appendChild(tt);
@@ -404,7 +404,8 @@ function renderUsina(name,el){
   var allRows=allData[name]||[];
   if(!allRows.length){el.innerHTML='<div style="padding:20px;color:var(--text3)">Sem dados disponiveis.</div>';return;}
   var rows=applyFilter(allRows);
-  var pl=allRows[0].dateStr+" - "+allRows[allRows.length-1].dateStr;
+  var isFullPeriod=toYM(filterStart)===toYM(new Date(Math.min.apply(null,allRows.map(function(r){return r.date;}))))&&toYM(filterEnd)===toYM(new Date(Math.max.apply(null,allRows.map(function(r){return r.date;}))));
+  var pl=isFullPeriod?allRows[0].dateStr+" - "+allRows[allRows.length-1].dateStr:fmtDate(filterStart)+" - "+fmtDate(filterEnd);
   var title=document.createElement("div");title.className="st";title.textContent=name;el.appendChild(title);
   var totC=sum(rows,"conc"),totCt=sum(rows,"contrat"),totCp=sum(rows,"comp");
   var totRx=rows.reduce(function(a,r){return a+(r.conc&&r.vur?r.conc*r.vur:0);},0);
