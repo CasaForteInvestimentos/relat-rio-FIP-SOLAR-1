@@ -129,7 +129,7 @@ main{flex:1;overflow-y:auto;padding:24px 28px 40px}
   font-family:'DM Sans',sans-serif;text-transform:uppercase;background:none;color:var(--text3);
 }
 .toggle-btn.on{background:var(--gold-glow);border-color:var(--gold);color:var(--gold-light)}
-.chart-wrap{position:relative;min-height:240px}
+.chart-wrap{position:relative}
 
 /* TABLE */
 .table-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);margin-bottom:14px;overflow:hidden}
@@ -436,11 +436,7 @@ function buildPeriodBar(panelName) {
     const s = bar.querySelector('.p-start').value;
     const e = bar.querySelector('.p-end').value;
     if (s) filterStart = new Date(s+'-01');
-    if (e) {
-      // fim do mês selecionado: primeiro dia do mês seguinte menos 1ms
-      const d = new Date(e+'-01');
-      filterEnd = new Date(d.getFullYear(), d.getMonth()+1, 0, 23, 59, 59);
-    }
+    if (e) { const d=new Date(e+'-01'); d.setMonth(d.getMonth()+1); d.setDate(0); filterEnd=d; }
     showPanel(panelName);
   };
   bar.querySelector('.btn-ghost').onclick = () => {
@@ -625,15 +621,11 @@ function renderGeral(el) {
 
 // ── USINA PANEL ───────────────────────────────────────────
 function renderUsina(name, el) {
-  const allRows = allData[name]||[];
-  if (!allRows.length) { el.innerHTML='<div class="error-box">Sem dados disponíveis.</div>'; return; }
-
-  const rows    = applyFilter(allRows);   // período filtrado → KPIs e gráficos
-  const allHist = allRows;               // período completo → tabela histórica
+  const rows = allData[name]||[];
+  if (!rows.length) { el.innerHTML='<div class="error-box">Sem dados disponíveis.</div>'; return; }
 
   const title=document.createElement('div'); title.className='section-title'; title.textContent=name; el.appendChild(title);
 
-  // KPIs — período filtrado
   const totC  = rows.reduce((a,r)=>a+(r.conc    ||0),0);
   const totCt = rows.reduce((a,r)=>a+(r.contrat ||0),0);
   const totCp = rows.reduce((a,r)=>a+(r.comp    ||0),0);
@@ -641,144 +633,11 @@ function renderUsina(name, el) {
   const ratio  = totCt>0 ? totC/totCt : null;
   const devPct = ratio!=null ? (ratio-1)*100 : null;
 
-  const periodoLabel = filterStart && filterEnd
-    ? `${fmtDate(filterStart)} → ${fmtDate(filterEnd)}`
-    : 'Período completo';
+  const lastReal = [...rows].reverse().find(r=>r.conc!=null);
+  const lastRt   = (lastReal&&lastReal.contrat>0) ? lastReal.conc/lastReal.contrat : null;
+  const lastDv   = lastRt!=null ? (lastRt-1)*100 : null;
 
   const kg=document.createElement('div'); kg.className='kpi-grid';
-  kg.innerHTML=`
-    <div class="kpi-card">
-      <div class="kpi-label">Injetada Total</div>
-      <div class="kpi-value">${rows.length?(totC/1000).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1}):'—'}<span class="kpi-unit">${rows.length?'MWh':''}</span></div>
-      <div class="kpi-sub">Concessionária · ${periodoLabel}</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Contratual Total</div>
-      <div class="kpi-value">${totCt>0?(totCt/1000).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1}):'—'}<span class="kpi-unit">${totCt>0?'MWh':''}</span></div>
-      <div class="kpi-sub">${periodoLabel}</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Performance Acumulada</div>
-      <div class="kpi-deviation" style="color:var(--gold-light)">${devPct!=null?(devPct>=0?'+':'')+devPct.toFixed(1)+'%':'—'}</div>
-      <div class="kpi-pct ${devClass(devPct)}">${ratio!=null?fmtPct(ratio)+' do contratual':'—'}</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Energia Compensada</div>
-      <div class="kpi-value">${rows.length?(totCp/1000).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1}):'—'}<span class="kpi-unit">${rows.length?'MWh':''}</span></div>
-      <div class="kpi-sub">${periodoLabel}</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Receita Estimada</div>
-      <div class="kpi-value">${fmtBRL(totRx)}</div>
-      <div class="kpi-sub">VUR × Concessionária</div>
-    </div>
-  `;
-  el.appendChild(kg);
-
-  // Energy chart — período filtrado
-  const labels = rows.map(r=>r.dateStr);
-  const concD  = rows.map(r=>toMWh(r.conc));
-  const ctD    = rows.map(r=>r.contrat>0?toMWh(r.contrat):null);
-  const p50D   = rows.map(r=>toMWh(r.p50));
-  const p75D   = rows.map(r=>toMWh(r.p75));
-  const medD   = rows.map(r=>toMWh(r.media));
-
-  const eid=`ec-${name}`;
-  const ec=document.createElement('div'); ec.className='chart-card';
-  ec.innerHTML=`
-    <div class="chart-card-title">Geração de Energia (MWh)</div>
-    <div class="chart-toggles">
-      <button class="toggle-btn on"  id="te-ct-${name}">Contratual</button>
-      <button class="toggle-btn"     id="te-p50-${name}">P50</button>
-      <button class="toggle-btn"     id="te-p75-${name}">P75</button>
-      <button class="toggle-btn"     id="te-med-${name}">Média P50–P75</button>
-    </div>
-    <div class="chart-wrap"><canvas id="${eid}" height="260"></canvas></div>
-  `;
-  el.appendChild(ec);
-
-  setTimeout(()=>{
-    const ctx=document.getElementById(eid); if(!ctx)return;
-    charts[eid]=new Chart(ctx,{
-      data:{labels,datasets:[
-        {type:'bar', label:'Injetada',      data:concD, backgroundColor:C.bar,  borderWidth:0, order:5},
-        {type:'line',label:'Contratual',    data:ctD,   borderColor:C.goldL,    borderWidth:2, borderDash:[5,3], pointRadius:0, tension:.3, fill:false, order:1, hidden:false},
-        {type:'line',label:'P50',           data:p50D,  borderColor:C.green,    borderWidth:1.5, pointRadius:0, tension:.3, fill:false, order:2, hidden:true},
-        {type:'line',label:'P75',           data:p75D,  borderColor:C.blue,     borderWidth:1.5, pointRadius:0, tension:.3, fill:false, order:3, hidden:true},
-        {type:'line',label:'Média P50–P75', data:medD,  borderColor:C.purple,   borderWidth:1.5, pointRadius:0, tension:.3, fill:false, order:4, hidden:true, borderDash:[2,3]},
-      ]},
-      options:chartOpts(v=>v!=null?v.toLocaleString('pt-BR',{maximumFractionDigits:1})+' MWh':'')
-    });
-    setupToggle(`te-ct-${name}`,  charts[eid],1);
-    setupToggle(`te-p50-${name}`, charts[eid],2);
-    setupToggle(`te-p75-${name}`, charts[eid],3);
-    setupToggle(`te-med-${name}`, charts[eid],4);
-  },50);
-
-  // Financial chart — período filtrado
-  const recD  = rows.map(r=>r.conc!=null&&r.vur!=null ? r.conc*r.vur/1000 : null);
-  const restD = rows.map(r=>r.contrat>0&&r.vur!=null  ? r.contrat*r.vur/1000 : null);
-
-  const fid=`fc-${name}`;
-  const fc=document.createElement('div'); fc.className='chart-card';
-  fc.innerHTML=`
-    <div class="chart-card-title">Receita Estimada (R$ mil)</div>
-    <div class="chart-toggles">
-      <button class="toggle-btn on" id="tf-est-${name}">Receita Contratual</button>
-    </div>
-    <div class="chart-wrap"><canvas id="${fid}" height="200"></canvas></div>
-  `;
-  el.appendChild(fc);
-
-  setTimeout(()=>{
-    const ctx=document.getElementById(fid); if(!ctx)return;
-    charts[fid]=new Chart(ctx,{
-      data:{labels,datasets:[
-        {type:'bar', label:'Receita Real',      data:recD,  backgroundColor:C.bar, borderWidth:0, order:2},
-        {type:'line',label:'Receita Contratual',data:restD, borderColor:C.goldL,   borderWidth:2, borderDash:[5,3], pointRadius:0, tension:.3, fill:false, order:1},
-      ]},
-      options:chartOpts(v=>v!=null?'R$'+v.toFixed(1)+'k':'')
-    });
-    setupToggle(`tf-est-${name}`, charts[fid],1);
-  },80);
-
-  // Tabela histórica — SEMPRE período completo independente do filtro
-  const div=document.createElement('div'); div.className='divider'; el.appendChild(div);
-  const tt=document.createElement('div'); tt.className='section-title'; tt.style.fontSize='15px'; tt.textContent='Histórico Mensal (completo)'; el.appendChild(tt);
-
-  const hasComp = allHist.some(r=>r.comp!=null);
-  const hasVur  = allHist.some(r=>r.vur!=null);
-
-  let tbody='';
-  for (const r of [...allHist].reverse()) {
-    if (r.conc==null && r.contrat==null) continue;
-    const rt = r.contrat>0 ? r.conc/r.contrat : null;
-    const dv = rt!=null ? (rt-1)*100 : null;
-    tbody+=`<tr>
-      <td>${r.dateStr}</td>
-      <td>${r.conc!=null ? fmtMWh(r.conc) : '—'}</td>
-      <td>${r.contrat>0  ? fmtMWh(r.contrat) : '—'}</td>
-      <td>${r.p50!=null  ? fmtMWh(r.p50) : '—'}</td>
-      <td style="color:var(--gold-light);font-weight:600">${rt!=null ? fmtPct(rt) : '—'}</td>
-      <td class="${devClass(dv)}">${dv!=null ? (dv>=0?'+':'')+dv.toFixed(1)+'%' : '—'}</td>
-      ${hasComp?`<td>${r.comp!=null?fmtMWh(r.comp):'—'}</td>`:''}
-      ${hasVur ?`<td>${r.vur!=null?'R$ '+r.vur.toFixed(4):'—'}</td>`:''}
-    </tr>`;
-  }
-
-  const tc=document.createElement('div'); tc.className='table-card';
-  tc.innerHTML=`<div class="table-scroll"><table>
-    <thead><tr>
-      <th style="text-align:left">Mês</th>
-      <th>Injetada</th><th>Contratual</th><th>P50</th>
-      <th>Performance</th><th>Desvio</th>
-      ${hasComp?'<th>Compensada</th>':''}
-      ${hasVur ?'<th>VUR</th>':''}
-    </tr></thead>
-    <tbody>${tbody}</tbody>
-  </table></div>`;
-  el.appendChild(tc);
-}
   kg.innerHTML=`
     <div class="kpi-card">
       <div class="kpi-label">Injetada Total</div>
