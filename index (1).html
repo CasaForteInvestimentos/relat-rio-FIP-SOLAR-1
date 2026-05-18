@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Casa Forte — FIP IE Energia Solar</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=Cormorant+Garamond:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --gold:       #C9A84C;
+  --gold-light: #E2C47A;
+  --gold-dim:   #8A6E32;
+  --gold-glow:  rgba(201,168,76,0.15);
+  --bg:         #080807;
+  --bg2:        #0F0E0C;
+  --bg3:        #141210;
+  --bg4:        #1C1914;
+  --border:     rgba(201,168,76,0.13);
+  --border2:    rgba(201,168,76,0.26);
+  --text:       #F0EDE6;
+  --text2:      #C8C0AE;
+  --text3:      #7A7060;
+  --green:      #4CAF7A;
+  --yellow:     #C9A84C;
+  --red:        #E05252;
+  --r:          4px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5;overflow-x:hidden}
+
+/* LOADING */
+#loading-screen{
+  position:fixed;inset:0;background:var(--bg);z-index:9999;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;
+  transition:opacity .5s;
+}
+#loading-screen.fade{opacity:0;pointer-events:none}
+.loader-brand{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;letter-spacing:.2em;color:var(--gold-light);text-transform:uppercase}
+.loader-sub{font-size:10px;letter-spacing:.25em;color:var(--text3);text-transform:uppercase;margin-top:-10px}
+.loader-bar-wrap{width:240px;height:1px;background:var(--border2);margin-top:16px}
+.loader-bar{height:1px;background:var(--gold);width:0%;transition:width .15s linear}
+.loader-status{font-size:11px;color:var(--text3);margin-top:8px;min-height:16px}
+
+/* HEADER */
+header{
+  position:sticky;top:0;z-index:100;
+  background:var(--bg2);border-bottom:1px solid var(--border2);
+  padding:0 36px;height:60px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.brand-name{font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:600;letter-spacing:.15em;color:var(--gold-light);text-transform:uppercase}
+.brand-sub{font-size:10px;letter-spacing:.2em;color:var(--text3);text-transform:uppercase;margin-top:2px}
+.header-right{display:flex;align-items:center;gap:14px}
+.fund-badge{font-size:10px;letter-spacing:.1em;color:var(--text3);border:1px solid var(--border);padding:4px 11px;border-radius:2px;text-transform:uppercase}
+.header-date{font-size:11px;color:var(--text3)}
+
+/* LAYOUT */
+.app{display:flex;height:calc(100vh - 60px)}
+
+/* SIDEBAR */
+.sidebar{width:190px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);overflow-y:auto;padding:12px 0}
+.sidebar-section{padding:10px 16px 4px;font-size:10px;letter-spacing:.16em;color:var(--text3);text-transform:uppercase}
+.nav-item{
+  display:block;width:100%;text-align:left;background:none;border:none;
+  padding:8px 18px;font-family:'DM Sans',sans-serif;font-size:12.5px;
+  color:var(--text2);cursor:pointer;transition:all .15s;
+  border-left:2px solid transparent;
+}
+.nav-item:hover{color:var(--text);background:var(--bg3)}
+.nav-item.active{color:var(--gold-light);background:var(--gold-glow);border-left-color:var(--gold)}
+.nav-item.no-data{color:var(--text3);cursor:not-allowed;opacity:.4}
+
+/* MAIN */
+main{flex:1;overflow-y:auto;padding:24px 28px 40px}
+
+/* PERIOD BAR */
+.period-bar{
+  display:flex;align-items:center;gap:10px;margin-bottom:22px;
+  padding:12px 18px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);
+  flex-wrap:wrap;
+}
+.period-bar label{font-size:11px;color:var(--text3);letter-spacing:.06em;text-transform:uppercase}
+.period-input{
+  background:var(--bg4);border:1px solid var(--border2);border-radius:var(--r);
+  padding:5px 9px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;
+}
+.period-input:focus{outline:none;border-color:var(--gold)}
+.btn{
+  padding:6px 14px;border-radius:var(--r);border:1px solid var(--border2);
+  font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.05em;
+  cursor:pointer;transition:all .15s;text-transform:uppercase;
+}
+.btn-ghost{background:none;color:var(--text2)}
+.btn-ghost:hover{background:var(--bg4);color:var(--text)}
+.btn-gold{background:var(--gold-glow);border-color:var(--gold);color:var(--gold-light)}
+.btn-gold:hover{background:rgba(201,168,76,0.25)}
+
+/* SECTION TITLE */
+.section-title{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;color:var(--gold-light);letter-spacing:.05em;margin-bottom:18px}
+
+/* KPI GRID */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:10px;margin-bottom:20px}
+.kpi-card{
+  background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);
+  padding:16px 18px;position:relative;overflow:hidden;
+}
+.kpi-card::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.4}
+.kpi-label{font-size:10px;letter-spacing:.12em;color:var(--text3);text-transform:uppercase;margin-bottom:10px;font-weight:500}
+.kpi-value{font-family:'Bebas Neue',sans-serif;font-size:34px;color:var(--gold-light);line-height:1;letter-spacing:.03em}
+.kpi-unit{font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text2);margin-left:3px;font-weight:400}
+.kpi-sub{font-size:11px;color:var(--text2);margin-top:6px;font-weight:400}
+
+/* performance KPI */
+.kpi-deviation{font-family:'Bebas Neue',sans-serif;font-size:38px;line-height:1;letter-spacing:.02em}
+.kpi-pct{font-size:12px;margin-top:4px;color:var(--text2)}
+.dev-pos{color:var(--green)}
+.dev-warn{color:var(--yellow)}
+.dev-neg{color:var(--red)}
+
+/* CHART CARDS */
+.chart-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:18px 18px 14px;margin-bottom:14px}
+.chart-card-title{font-size:11px;letter-spacing:.12em;color:var(--text3);text-transform:uppercase;margin-bottom:10px;font-weight:500}
+.chart-toggles{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.toggle-btn{
+  padding:4px 10px;border-radius:2px;border:1px solid var(--border2);
+  font-size:10px;letter-spacing:.07em;cursor:pointer;transition:all .15s;
+  font-family:'DM Sans',sans-serif;text-transform:uppercase;background:none;color:var(--text3);
+}
+.toggle-btn.on{background:var(--gold-glow);border-color:var(--gold);color:var(--gold-light)}
+.chart-wrap{position:relative;min-height:240px}
+
+/* TABLE */
+.table-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);margin-bottom:14px;overflow:hidden}
+.table-scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+thead tr{background:var(--bg4);border-bottom:1px solid var(--border2)}
+th{padding:10px 14px;text-align:right;font-size:10px;letter-spacing:.1em;color:var(--text3);text-transform:uppercase;font-weight:500;white-space:nowrap}
+th:first-child{text-align:left}
+td{padding:9px 14px;text-align:right;border-bottom:1px solid var(--border);color:var(--text2);white-space:nowrap}
+td:first-child{text-align:left;color:var(--text);font-weight:500}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--bg4)}
+.pct-ok{color:var(--green);font-weight:600}
+.pct-warn{color:var(--yellow);font-weight:600}
+.pct-bad{color:var(--red);font-weight:600}
+
+/* DIVIDER */
+.divider{height:1px;background:var(--border);margin:22px 0}
+
+/* ERROR */
+.error-box{padding:14px 18px;background:rgba(224,82,82,.08);border:1px solid rgba(224,82,82,.25);border-radius:var(--r);color:#e05252;font-size:12px;margin-bottom:14px}
+
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+</style>
+</head>
+<body>
+
+<div id="loading-screen">
+  <div>
+    <div class="loader-brand">Casa Forte</div>
+    <div class="loader-sub">FIP IE Energia Solar</div>
+  </div>
+  <div style="text-align:center">
+    <div class="loader-bar-wrap"><div class="loader-bar" id="loader-bar"></div></div>
+    <div class="loader-status" id="loader-status">Iniciando…</div>
+  </div>
+</div>
+
+<header>
+  <div>
+    <div class="brand-name">Casa Forte Investimentos</div>
+    <div class="brand-sub">FIP IE Energia Solar</div>
+  </div>
+  <div class="header-right">
+    <div class="fund-badge">FIP IE</div>
+    <div class="header-date" id="hdate"></div>
+  </div>
+</header>
+
+<div class="app">
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-section">Visão</div>
+    <button class="nav-item active" data-panel="geral" onclick="showPanel('geral')">Visão Geral</button>
+    <div class="sidebar-section">Usinas</div>
+  </nav>
+  <main id="main-content"></main>
+</div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────
+const SHEET_ID  = "1BGH0Lg_krU3zxAP7MnPmXgBcHH-D83qcPOow5nyYQTg";
+const GVIZ      = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=`;
+const TODAY     = new Date(); TODAY.setDate(1); TODAY.setHours(0,0,0,0);
+
+const SHEETS = [
+  "Delmiro1","Paulistana1","Paulistana2","Paulistana3",
+  "Tiradentes","Jaicó1","Jaicó2","Jaicó3",
+  "Barcarena1","Barcarena2","Cametá4"
+];
+
+const C = {
+  gold:'#C9A84C', goldL:'#E2C47A', green:'#4CAF7A',
+  blue:'#4A90D9', purple:'#9B59B6', bar:'rgba(201,168,76,0.55)'
+};
+
+// ── STATE ────────────────────────────────────────────────
+let allData   = {};
+let filterStart = null;
+let filterEnd   = null;
+let charts    = {};
+let loaded    = 0;
+
+// ── UTILS ────────────────────────────────────────────────
+const MONTHS = {jan:0,fev:1,mar:2,abr:3,mai:4,jun:5,jul:6,ago:7,set:8,out:9,nov:10,dez:11};
+
+function parseDate(s) {
+  if (!s) return null;
+  const m = s.trim().toLowerCase().match(/^([a-záéíóúâêîôûãõ]+)[.\-]+(\d+)$/);
+  if (!m) return null;
+  const mon = MONTHS[m[1].slice(0,3)];
+  if (mon === undefined) return null;
+  let yr = parseInt(m[2]);
+  if (yr < 100) yr += 2000;
+  const d = new Date(yr, mon, 1);
+  // ← Ignora datas futuras
+  return d > TODAY ? null : d;
+}
+
+function fmtDate(d) {
+  if (!d) return '';
+  const ms = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  return `${ms[d.getMonth()]}/${String(d.getFullYear()).slice(2)}`;
+}
+
+function parseNum(s) {
+  if (!s || !s.trim() || s.trim()==='-') return null;
+  let c = s.trim().replace(/\s/g,'');
+  if (c.includes(',') && c.includes('.')) c = c.replace(/\./g,'').replace(',','.');
+  else if (c.includes(',')) c = c.replace(',','.');
+  const n = parseFloat(c);
+  return isNaN(n) ? null : n;
+}
+
+function fmtMWh(kwh) {
+  if (kwh == null) return '—';
+  const mwh = kwh / 1000;
+  return mwh.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' MWh';
+}
+function toMWh(kwh) { return kwh != null ? kwh / 1000 : null; }
+
+function fmtBRL(v) {
+  if (v == null) return '—';
+  if (Math.abs(v) >= 1e6) return 'R$ '+(v/1e6).toFixed(2)+'M';
+  return 'R$ '+v.toLocaleString('pt-BR',{maximumFractionDigits:0});
+}
+
+function fmtPct(r) { return r==null ? '—' : (r*100).toFixed(1)+'%'; }
+
+function perfClass(r) { return ''; }  // performance sempre ouro — sem cor especial
+function devClass(dv) {
+  if (dv == null) return '';
+  return dv >= 0 ? 'dev-pos' : 'dev-neg';
+}
+function pctClass(r) {
+  if (r==null) return '';
+  if (r >= 0.98) return 'pct-ok';
+  if (r >= 0.92) return 'pct-warn';
+  return 'pct-bad';
+}
+
+function toMonthInput(d) { return d.toISOString().slice(0,7); }
+
+function killChart(id) { if(charts[id]){charts[id].destroy();delete charts[id];} }
+
+// ── CSV PARSE ─────────────────────────────────────────────
+function parseCSVLine(line) {
+  const r=[]; let cur='',inQ=false;
+  for(let i=0;i<line.length;i++){
+    const c=line[i];
+    if(c==='"'){inQ=!inQ;continue;}
+    if(c===','&&!inQ){r.push(cur);cur='';continue;}
+    cur+=c;
+  }
+  r.push(cur); return r;
+}
+
+function parseCSV(text) {
+  const lines = text.split('\n').map(l=>l.trim()).filter(l=>l);
+  if(!lines.length) return [];
+  const hdr = parseCSVLine(lines[0]);
+  return lines.slice(1).map(l=>{
+    const cols = parseCSVLine(l);
+    const obj={};
+    hdr.forEach((h,i)=>{ obj[h.trim()]=(cols[i]||'').trim(); });
+    return obj;
+  });
+}
+
+// ── PROCESS SHEET ─────────────────────────────────────────
+function processSheet(name, rows) {
+  const data = [];
+  for (const row of rows) {
+    const dateRaw = row['Data'] || Object.values(row)[0] || '';
+    const date = parseDate(dateRaw);
+    if (!date) continue;                    // null = vazio ou data futura
+
+    const conc    = parseNum(row['Energia Injetada (Concessionária)'] || row['Energia Injetada (Concessionária)']);
+    const superv  = parseNum(row['Energia Injetada(Supervisório)'] || row['Energia Injetada (Supervisório)']);
+    const p50     = parseNum(row['Energia Projetada P50']);
+    const p75     = parseNum(row['Energia Projetada P75']);
+    const media   = parseNum(row['Energia Projetada Média'] || row['Energia Projetada Media']);
+    const contrat = parseNum(row['Energia Contratual']);
+    const vur     = parseNum(row['VUR (R$/Kwh)'] || row['VUR (R$/KWh)']);
+    const comp    = parseNum(row['Energia Compensada']);
+
+    data.push({date, dateStr:fmtDate(date), conc, superv, p50, p75, media, contrat, vur, comp});
+  }
+
+  data.sort((a,b)=>a.date-b.date);
+
+  // Primeiro mês com Supervisório > 0
+  const first = data.findIndex(r => r.superv != null && r.superv > 0);
+  if (first < 0) return [];
+  return data.slice(first);
+}
+
+// ── FILTER ────────────────────────────────────────────────
+function applyFilter(rows) {
+  return rows.filter(r => {
+    if (filterStart && r.date < filterStart) return false;
+    if (filterEnd   && r.date > filterEnd)   return false;
+    return true;
+  });
+}
+
+// ── FETCH ─────────────────────────────────────────────────
+async function fetchSheet(name) {
+  const url = GVIZ + encodeURIComponent(name);
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('HTTP '+res.status);
+    const text = await res.text();
+    allData[name] = processSheet(name, parseCSV(text));
+  } catch(e) {
+    console.warn('Erro ao carregar', name, e.message);
+    allData[name] = [];
+  }
+  loaded++;
+  document.getElementById('loader-bar').style.width = Math.round(loaded/SHEETS.length*100)+'%';
+  document.getElementById('loader-status').textContent = `Carregando ${name}… (${loaded}/${SHEETS.length})`;
+}
+
+async function loadAll() {
+  await Promise.all(SHEETS.map(fetchSheet));
+  document.getElementById('loader-status').textContent = 'Montando dashboard…';
+
+  // Define range do filtro = range real dos dados (sem futuro, já filtrado no parseDate)
+  const allDates = Object.values(allData).flat().map(r=>r.date).filter(Boolean);
+  if (allDates.length) {
+    filterStart = new Date(Math.min(...allDates));
+    filterEnd   = new Date(Math.max(...allDates));
+  }
+
+  buildUI();
+
+  setTimeout(()=>{
+    const ls = document.getElementById('loading-screen');
+    ls.classList.add('fade');
+    setTimeout(()=>ls.style.display='none', 500);
+  }, 200);
+}
+
+// ── BUILD UI ──────────────────────────────────────────────
+function buildUI() {
+  document.getElementById('hdate').textContent =
+    new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+
+  const sidebar = document.getElementById('sidebar');
+  const usinas  = SHEETS.filter(n => allData[n]?.length > 0);
+  const noData  = SHEETS.filter(n => !allData[n]?.length);
+
+  usinas.forEach(name => {
+    const btn = document.createElement('button');
+    btn.className = 'nav-item';
+    btn.dataset.panel = name;
+    btn.textContent = name;
+    btn.onclick = () => showPanel(name);
+    sidebar.appendChild(btn);
+  });
+
+  if (noData.length) {
+    const sec = document.createElement('div');
+    sec.className = 'sidebar-section'; sec.textContent = 'Em breve';
+    sidebar.appendChild(sec);
+    noData.forEach(name => {
+      const btn = document.createElement('button');
+      btn.className = 'nav-item no-data'; btn.textContent = name; btn.disabled = true;
+      sidebar.appendChild(btn);
+    });
+  }
+
+  showPanel('geral');
+}
+
+// ── PANEL ROUTING ─────────────────────────────────────────
+function showPanel(name) {
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.panel===name));
+  Object.keys(charts).forEach(killChart);
+  const main = document.getElementById('main-content');
+  main.innerHTML = '';
+  if (name === 'geral') renderGeral(main);
+  else renderUsina(name, main);
+}
+
+// ── PERIOD BAR ────────────────────────────────────────────
+function buildPeriodBar(panelName) {
+  const allDates = Object.values(allData).flat().map(r=>r.date).filter(Boolean);
+  const minD = new Date(Math.min(...allDates));
+  const maxD = new Date(Math.max(...allDates));
+
+  const bar = document.createElement('div');
+  bar.className = 'period-bar';
+  bar.innerHTML = `
+    <label>Período</label>
+    <input type="month" class="period-input p-start" value="${toMonthInput(filterStart||minD)}">
+    <span style="color:var(--text3)">→</span>
+    <input type="month" class="period-input p-end" value="${toMonthInput(filterEnd||maxD)}">
+    <button class="btn btn-gold">Aplicar</button>
+    <button class="btn btn-ghost">Período completo</button>
+  `;
+  bar.querySelector('.btn-gold').onclick = () => {
+    const s = bar.querySelector('.p-start').value;
+    const e = bar.querySelector('.p-end').value;
+    if (s) filterStart = new Date(s+'-01');
+    if (e) {
+      // fim do mês selecionado: primeiro dia do mês seguinte menos 1ms
+      const d = new Date(e+'-01');
+      filterEnd = new Date(d.getFullYear(), d.getMonth()+1, 0, 23, 59, 59);
+    }
+    showPanel(panelName);
+  };
+  bar.querySelector('.btn-ghost').onclick = () => {
+    filterStart = minD; filterEnd = maxD;
+    bar.querySelector('.p-start').value = toMonthInput(minD);
+    bar.querySelector('.p-end').value   = toMonthInput(maxD);
+    showPanel(panelName);
+  };
+  return bar;
+}
+
+// ── CHART OPTIONS ─────────────────────────────────────────
+function chartOpts(yFmt) {
+  return {
+    responsive:true, maintainAspectRatio:false,
+    interaction:{mode:'index',intersect:false},
+    plugins:{
+      legend:{ display:false },   // ← legenda desativada; só os toggles controlam
+      tooltip:{
+        backgroundColor:'#1C1914', borderColor:'rgba(201,168,76,0.3)', borderWidth:1,
+        titleColor:'#E2C47A', bodyColor:'#C8C0AE',
+        callbacks:{ label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y!=null ? yFmt(ctx.parsed.y) : '—'}` }
+      }
+    },
+    scales:{
+      x:{ ticks:{color:'#7A7060',font:{size:10},maxRotation:45,autoSkip:true,maxTicksLimit:24}, grid:{color:'rgba(201,168,76,0.05)'} },
+      y:{ ticks:{color:'#7A7060',font:{size:10},callback:yFmt}, grid:{color:'rgba(201,168,76,0.05)'} }
+    }
+  };
+}
+
+function setupToggle(btnId, chart, idx) {
+  const btn = document.getElementById(btnId);
+  if (!btn || !chart) return;
+  btn.onclick = () => {
+    const ds = chart.data.datasets[idx];
+    if (!ds) return;
+    ds.hidden = !ds.hidden;
+    btn.classList.toggle('on', !ds.hidden);
+    chart.update();
+  };
+}
+
+// ── GERAL PANEL ───────────────────────────────────────────
+function renderGeral(el) {
+  el.appendChild(buildPeriodBar('geral'));
+
+  const title = document.createElement('div');
+  title.className = 'section-title'; title.textContent = 'Visão Geral do Fundo';
+  el.appendChild(title);
+
+  const usinas = SHEETS.filter(n => allData[n]?.length > 0);
+
+  let totConc=0, totContrat=0, totComp=0, totRec=0;
+  const monthMap = {};
+
+  for (const name of usinas) {
+    const rows = applyFilter(allData[name]);
+    for (const r of rows) {
+      if (r.conc    != null) totConc    += r.conc;
+      if (r.contrat != null) totContrat += r.contrat;
+      if (r.comp    != null) totComp    += r.comp;
+      if (r.conc    != null && r.vur != null) totRec += r.conc * r.vur;
+
+      const k = r.dateStr;
+      if (!monthMap[k]) monthMap[k] = {date:r.date, conc:0, contrat:0, p50:0, p50n:0};
+      if (r.conc    != null) monthMap[k].conc    += r.conc;
+      if (r.contrat != null) monthMap[k].contrat += r.contrat;
+      if (r.p50     != null) { monthMap[k].p50 += r.p50; monthMap[k].p50n++; }
+    }
+  }
+
+  const ratio  = totContrat > 0 ? totConc/totContrat : null;
+  const devPct = ratio != null  ? (ratio-1)*100 : null;
+
+  // KPIs
+  const kg = document.createElement('div'); kg.className='kpi-grid';
+  kg.innerHTML = `
+    <div class="kpi-card">
+      <div class="kpi-label">Energia Total Injetada</div>
+      <div class="kpi-value">${(totConc/1000).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})}<span class="kpi-unit">MWh</span></div>
+      <div class="kpi-sub">Concessionária · período filtrado</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Energia Contratual</div>
+      <div class="kpi-value">${(totContrat/1000).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})}<span class="kpi-unit">MWh</span></div>
+      <div class="kpi-sub">Total contratado no período</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Energia Compensada</div>
+      <div class="kpi-value">${(totComp/1000).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})}<span class="kpi-unit">MWh</span></div>
+      <div class="kpi-sub">Total compensada no período</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Receita Total Estimada</div>
+      <div class="kpi-value">${fmtBRL(totRec)}</div>
+      <div class="kpi-sub">VUR × Concessionária</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Performance Geral</div>
+      <div class="kpi-deviation" style="color:var(--gold-light)">${devPct!=null ? (devPct>=0?'+':'')+devPct.toFixed(1)+'%' : '—'}</div>
+      <div class="kpi-pct ${devClass(devPct)}">${ratio!=null ? fmtPct(ratio)+' do contratual' : '—'}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Usinas Ativas</div>
+      <div class="kpi-value">${usinas.length}<span class="kpi-unit">usinas</span></div>
+      <div class="kpi-sub">${SHEETS.length-usinas.length} em implantação</div>
+    </div>
+  `;
+  el.appendChild(kg);
+
+  // Chart consolidado
+  const months  = Object.values(monthMap).sort((a,b)=>a.date-b.date);
+  const labels  = months.map(m=>m.dateStr);
+  const concArr = months.map(m=>m.conc/1000);
+  const ctArr   = months.map(m=>m.contrat>0 ? m.contrat/1000 : null);
+  const p50Arr  = months.map(m=>m.p50n>0    ? m.p50/1000     : null);
+
+  const gcid = 'chart-geral';
+  const gc = document.createElement('div'); gc.className='chart-card';
+  gc.innerHTML=`
+    <div class="chart-card-title">Geração Consolidada (MWh)</div>
+    <div class="chart-toggles">
+      <button class="toggle-btn on" id="tg-ct">Contratual</button>
+      <button class="toggle-btn on" id="tg-p50">P50</button>
+    </div>
+    <div class="chart-wrap"><canvas id="${gcid}" height="240"></canvas></div>
+  `;
+  el.appendChild(gc);
+
+  setTimeout(()=>{
+    const ctx=document.getElementById(gcid); if(!ctx)return;
+    charts[gcid]=new Chart(ctx,{
+      data:{labels, datasets:[
+        {type:'bar', label:'Injetada (MWh)', data:concArr, backgroundColor:C.bar, borderWidth:0, order:3},
+        {type:'line',label:'Contratual',     data:ctArr,   borderColor:C.goldL,  borderWidth:2, borderDash:[5,3], pointRadius:0, tension:.3, fill:false, order:1},
+        {type:'line',label:'P50',            data:p50Arr,  borderColor:C.green,  borderWidth:1.5, pointRadius:0, tension:.3, fill:false, order:2},
+      ]},
+      options:chartOpts(v=>v.toLocaleString('pt-BR',{maximumFractionDigits:1})+' MWh')
+    });
+    setupToggle('tg-ct',  charts[gcid],1);
+    setupToggle('tg-p50', charts[gcid],2);
+  },60);
+
+  // Tabela resumo
+  const div=document.createElement('div'); div.className='divider'; el.appendChild(div);
+  const tt=document.createElement('div'); tt.className='section-title'; tt.style.fontSize='16px'; tt.textContent='Resumo por Usina'; el.appendChild(tt);
+
+  const tc=document.createElement('div'); tc.className='table-card';
+  let tbody='';
+  for (const name of usinas) {
+    const rows = applyFilter(allData[name]);
+    const c  = rows.reduce((a,r)=>a+(r.conc    ||0),0);
+    const ct = rows.reduce((a,r)=>a+(r.contrat ||0),0);
+    const cp = rows.reduce((a,r)=>a+(r.comp    ||0),0);
+    const rx = rows.reduce((a,r)=>a+(r.conc&&r.vur?r.conc*r.vur:0),0);
+    const rt = ct>0 ? c/ct : null;
+    const dv = rt!=null ? (rt-1)*100 : null;
+    // Último mês com dado real de concessionária
+    const lastReal = [...rows].reverse().find(r=>r.conc!=null);
+    const lastMes  = lastReal ? lastReal.dateStr : '—';
+    tbody+=`<tr>
+      <td>${name}</td>
+      <td>${(c/1000).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})} MWh</td>
+      <td>${ct>0?(ct/1000).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+' MWh':'—'}</td>
+      <td style="color:var(--gold-light);font-weight:600">${rt!=null?fmtPct(rt):'—'}</td>
+      <td class="${devClass(dv)}">${dv!=null?(dv>=0?'+':'')+dv.toFixed(1)+'%':'—'}</td>
+      <td>${fmtBRL(rx)}</td>
+      <td>${lastMes}</td>
+    </tr>`;
+  }
+  tc.innerHTML=`<div class="table-scroll"><table>
+    <thead><tr>
+      <th style="text-align:left">Usina</th>
+      <th>Injetada</th><th>Contratual</th><th>Performance</th>
+      <th>Desvio</th><th>Receita Est.</th><th>Último mês</th>
+    </tr></thead>
+    <tbody>${tbody}</tbody>
+  </table></div>`;
+  el.appendChild(tc);
+}
+
+// ── USINA PANEL ───────────────────────────────────────────
+function renderUsina(name, el) {
+  const allRows = allData[name]||[];
+  if (!allRows.length) { el.innerHTML='<div class="error-box">Sem dados disponíveis.</div>'; return; }
+
+  const rows    = applyFilter(allRows);   // período filtrado → KPIs e gráficos
+  const allHist = allRows;               // período completo → tabela histórica
+
+  const title=document.createElement('div'); title.className='section-title'; title.textContent=name; el.appendChild(title);
+
+  // KPIs — período filtrado
+  const totC  = rows.reduce((a,r)=>a+(r.conc    ||0),0);
+  const totCt = rows.reduce((a,r)=>a+(r.contrat ||0),0);
+  const totCp = rows.reduce((a,r)=>a+(r.comp    ||0),0);
+  const totRx = rows.reduce((a,r)=>a+(r.conc&&r.vur?r.conc*r.vur:0),0);
+  const ratio  = totCt>0 ? totC/totCt : null;
+  const devPct = ratio!=null ? (ratio-1)*100 : null;
+
+  const periodoLabel = filterStart && filterEnd
+    ? `${fmtDate(filterStart)} → ${fmtDate(filterEnd)}`
+    : 'Período completo';
+
+  const kg=document.createElement('div'); kg.className='kpi-grid';
+  kg.innerHTML=`
+    <div class="kpi-card">
+      <div class="kpi-label">Injetada Total</div>
+      <div class="kpi-value">${rows.length?(totC/1000).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1}):'—'}<span class="kpi-unit">${rows.length?'MWh':''}</span></div>
+      <div class="kpi-sub">Concessionária · ${periodoLabel}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Contratual Total</div>
+      <div class="kpi-value">${totCt>0?(totCt/1000).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1}):'—'}<span class="kpi-unit">${totCt>0?'MWh':''}</span></div>
+      <div class="kpi-sub">${periodoLabel}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Performance Acumulada</div>
+      <div class="kpi-deviation" style="color:var(--gold-light)">${devPct!=null?(devPct>=0?'+':'')+devPct.toFixed(1)+'%':'—'}</div>
+      <div class="kpi-pct ${devClass(devPct)}">${ratio!=null?fmtPct(ratio)+' do contratual':'—'}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Energia Compensada</div>
+      <div class="kpi-value">${rows.length?(totCp/1000).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1}):'—'}<span class="kpi-unit">${rows.length?'MWh':''}</span></div>
+      <div class="kpi-sub">${periodoLabel}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Receita Estimada</div>
+      <div class="kpi-value">${fmtBRL(totRx)}</div>
+      <div class="kpi-sub">VUR × Concessionária</div>
+    </div>
+  `;
+  el.appendChild(kg);
+
+  // Energy chart — período filtrado
+  const labels = rows.map(r=>r.dateStr);
+  const concD  = rows.map(r=>toMWh(r.conc));
+  const ctD    = rows.map(r=>r.contrat>0?toMWh(r.contrat):null);
+  const p50D   = rows.map(r=>toMWh(r.p50));
+  const p75D   = rows.map(r=>toMWh(r.p75));
+  const medD   = rows.map(r=>toMWh(r.media));
+
+  const eid=`ec-${name}`;
+  const ec=document.createElement('div'); ec.className='chart-card';
+  ec.innerHTML=`
+    <div class="chart-card-title">Geração de Energia (MWh)</div>
+    <div class="chart-toggles">
+      <button class="toggle-btn on"  id="te-ct-${name}">Contratual</button>
+      <button class="toggle-btn"     id="te-p50-${name}">P50</button>
+      <button class="toggle-btn"     id="te-p75-${name}">P75</button>
+      <button class="toggle-btn"     id="te-med-${name}">Média P50–P75</button>
+    </div>
+    <div class="chart-wrap"><canvas id="${eid}" height="260"></canvas></div>
+  `;
+  el.appendChild(ec);
+
+  setTimeout(()=>{
+    const ctx=document.getElementById(eid); if(!ctx)return;
+    charts[eid]=new Chart(ctx,{
+      data:{labels,datasets:[
+        {type:'bar', label:'Injetada',      data:concD, backgroundColor:C.bar,  borderWidth:0, order:5},
+        {type:'line',label:'Contratual',    data:ctD,   borderColor:C.goldL,    borderWidth:2, borderDash:[5,3], pointRadius:0, tension:.3, fill:false, order:1, hidden:false},
+        {type:'line',label:'P50',           data:p50D,  borderColor:C.green,    borderWidth:1.5, pointRadius:0, tension:.3, fill:false, order:2, hidden:true},
+        {type:'line',label:'P75',           data:p75D,  borderColor:C.blue,     borderWidth:1.5, pointRadius:0, tension:.3, fill:false, order:3, hidden:true},
+        {type:'line',label:'Média P50–P75', data:medD,  borderColor:C.purple,   borderWidth:1.5, pointRadius:0, tension:.3, fill:false, order:4, hidden:true, borderDash:[2,3]},
+      ]},
+      options:chartOpts(v=>v!=null?v.toLocaleString('pt-BR',{maximumFractionDigits:1})+' MWh':'')
+    });
+    setupToggle(`te-ct-${name}`,  charts[eid],1);
+    setupToggle(`te-p50-${name}`, charts[eid],2);
+    setupToggle(`te-p75-${name}`, charts[eid],3);
+    setupToggle(`te-med-${name}`, charts[eid],4);
+  },50);
+
+  // Financial chart — período filtrado
+  const recD  = rows.map(r=>r.conc!=null&&r.vur!=null ? r.conc*r.vur/1000 : null);
+  const restD = rows.map(r=>r.contrat>0&&r.vur!=null  ? r.contrat*r.vur/1000 : null);
+
+  const fid=`fc-${name}`;
+  const fc=document.createElement('div'); fc.className='chart-card';
+  fc.innerHTML=`
+    <div class="chart-card-title">Receita Estimada (R$ mil)</div>
+    <div class="chart-toggles">
+      <button class="toggle-btn on" id="tf-est-${name}">Receita Contratual</button>
+    </div>
+    <div class="chart-wrap"><canvas id="${fid}" height="200"></canvas></div>
+  `;
+  el.appendChild(fc);
+
+  setTimeout(()=>{
+    const ctx=document.getElementById(fid); if(!ctx)return;
+    charts[fid]=new Chart(ctx,{
+      data:{labels,datasets:[
+        {type:'bar', label:'Receita Real',      data:recD,  backgroundColor:C.bar, borderWidth:0, order:2},
+        {type:'line',label:'Receita Contratual',data:restD, borderColor:C.goldL,   borderWidth:2, borderDash:[5,3], pointRadius:0, tension:.3, fill:false, order:1},
+      ]},
+      options:chartOpts(v=>v!=null?'R$'+v.toFixed(1)+'k':'')
+    });
+    setupToggle(`tf-est-${name}`, charts[fid],1);
+  },80);
+
+  // Tabela histórica — SEMPRE período completo independente do filtro
+  const div=document.createElement('div'); div.className='divider'; el.appendChild(div);
+  const tt=document.createElement('div'); tt.className='section-title'; tt.style.fontSize='15px'; tt.textContent='Histórico Mensal (completo)'; el.appendChild(tt);
+
+  const hasComp = allHist.some(r=>r.comp!=null);
+  const hasVur  = allHist.some(r=>r.vur!=null);
+
+  let tbody='';
+  for (const r of [...allHist].reverse()) {
+    if (r.conc==null && r.contrat==null) continue;
+    const rt = r.contrat>0 ? r.conc/r.contrat : null;
+    const dv = rt!=null ? (rt-1)*100 : null;
+    tbody+=`<tr>
+      <td>${r.dateStr}</td>
+      <td>${r.conc!=null ? fmtMWh(r.conc) : '—'}</td>
+      <td>${r.contrat>0  ? fmtMWh(r.contrat) : '—'}</td>
+      <td>${r.p50!=null  ? fmtMWh(r.p50) : '—'}</td>
+      <td style="color:var(--gold-light);font-weight:600">${rt!=null ? fmtPct(rt) : '—'}</td>
+      <td class="${devClass(dv)}">${dv!=null ? (dv>=0?'+':'')+dv.toFixed(1)+'%' : '—'}</td>
+      ${hasComp?`<td>${r.comp!=null?fmtMWh(r.comp):'—'}</td>`:''}
+      ${hasVur ?`<td>${r.vur!=null?'R$ '+r.vur.toFixed(4):'—'}</td>`:''}
+    </tr>`;
+  }
+
+  const tc=document.createElement('div'); tc.className='table-card';
+  tc.innerHTML=`<div class="table-scroll"><table>
+    <thead><tr>
+      <th style="text-align:left">Mês</th>
+      <th>Injetada</th><th>Contratual</th><th>P50</th>
+      <th>Performance</th><th>Desvio</th>
+      ${hasComp?'<th>Compensada</th>':''}
+      ${hasVur ?'<th>VUR</th>':''}
+    </tr></thead>
+    <tbody>${tbody}</tbody>
+  </table></div>`;
+  el.appendChild(tc);
+}
+  kg.innerHTML=`
+    <div class="kpi-card">
+      <div class="kpi-label">Injetada Total</div>
+      <div class="kpi-value">${(totC/1000).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})}<span class="kpi-unit">MWh</span></div>
+      <div class="kpi-sub">Concessionária · período completo</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Contratual Total</div>
+      <div class="kpi-value">${totCt>0?(totCt/1000).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1}):'—'}<span class="kpi-unit">${totCt>0?'MWh':''}</span></div>
+      <div class="kpi-sub">Período completo</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Performance Acumulada</div>
+      <div class="kpi-deviation" style="color:var(--gold-light)">${devPct!=null?(devPct>=0?'+':'')+devPct.toFixed(1)+'%':'—'}</div>
+      <div class="kpi-pct ${devClass(devPct)}">${ratio!=null?fmtPct(ratio)+' do contratual':'—'}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Performance — ${lastReal?lastReal.dateStr:'—'}</div>
+      <div class="kpi-deviation" style="color:var(--gold-light)">${lastDv!=null?(lastDv>=0?'+':'')+lastDv.toFixed(1)+'%':'—'}</div>
+      <div class="kpi-pct ${devClass(lastDv)}">${lastRt!=null?fmtPct(lastRt)+' do contratual':'—'}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Energia Compensada</div>
+      <div class="kpi-value">${(totCp/1000).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})}<span class="kpi-unit">MWh</span></div>
+      <div class="kpi-sub">Período completo</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Receita Estimada</div>
+      <div class="kpi-value">${fmtBRL(totRx)}</div>
+      <div class="kpi-sub">VUR × Concessionária</div>
+    </div>
+  `;
+  el.appendChild(kg);
+
+  // Energy chart — valores em MWh (kWh/1000)
+  const labels = rows.map(r=>r.dateStr);
+  const concD  = rows.map(r=>toMWh(r.conc));
+  const ctD    = rows.map(r=>r.contrat>0?toMWh(r.contrat):null);
+  const p50D   = rows.map(r=>toMWh(r.p50));
+  const p75D   = rows.map(r=>toMWh(r.p75));
+  const medD   = rows.map(r=>toMWh(r.media));
+
+  const eid=`ec-${name}`;
+  const ec=document.createElement('div'); ec.className='chart-card';
+  ec.innerHTML=`
+    <div class="chart-card-title">Geração de Energia (MWh)</div>
+    <div class="chart-toggles">
+      <button class="toggle-btn on"  id="te-ct-${name}">Contratual</button>
+      <button class="toggle-btn"     id="te-p50-${name}">P50</button>
+      <button class="toggle-btn"     id="te-p75-${name}">P75</button>
+      <button class="toggle-btn"     id="te-med-${name}">Média P50–P75</button>
+    </div>
+    <div class="chart-wrap"><canvas id="${eid}" height="260"></canvas></div>
+  `;
+  el.appendChild(ec);
+
+  setTimeout(()=>{
+    const ctx=document.getElementById(eid); if(!ctx)return;
+    charts[eid]=new Chart(ctx,{
+      data:{labels,datasets:[
+        {type:'bar', label:'Injetada',      data:concD, backgroundColor:C.bar,   borderWidth:0, order:5},
+        {type:'line',label:'Contratual',    data:ctD,   borderColor:C.goldL,     borderWidth:2, borderDash:[5,3], pointRadius:0, tension:.3, fill:false, order:1, hidden:false},
+        {type:'line',label:'P50',           data:p50D,  borderColor:C.green,     borderWidth:1.5, pointRadius:0, tension:.3, fill:false, order:2, hidden:true},
+        {type:'line',label:'P75',           data:p75D,  borderColor:C.blue,      borderWidth:1.5, pointRadius:0, tension:.3, fill:false, order:3, hidden:true},
+        {type:'line',label:'Média P50–P75', data:medD,  borderColor:C.purple,    borderWidth:1.5, pointRadius:0, tension:.3, fill:false, order:4, hidden:true, borderDash:[2,3]},
+      ]},
+      options:chartOpts(v=>v!=null?v.toLocaleString('pt-BR',{maximumFractionDigits:1})+' MWh':'')
+    });
+    setupToggle(`te-ct-${name}`,  charts[eid],1);
+    setupToggle(`te-p50-${name}`, charts[eid],2);
+    setupToggle(`te-p75-${name}`, charts[eid],3);
+    setupToggle(`te-med-${name}`, charts[eid],4);
+  },50);
+
+  // Financial chart
+  const recD  = rows.map(r=>r.conc!=null&&r.vur!=null ? r.conc*r.vur/1000 : null);
+  const restD = rows.map(r=>r.contrat>0&&r.vur!=null  ? r.contrat*r.vur/1000 : null);
+
+  const fid=`fc-${name}`;
+  const fc=document.createElement('div'); fc.className='chart-card';
+  fc.innerHTML=`
+    <div class="chart-card-title">Receita Estimada (R$ mil)</div>
+    <div class="chart-toggles">
+      <button class="toggle-btn on" id="tf-est-${name}">Receita Contratual</button>
+    </div>
+    <div class="chart-wrap"><canvas id="${fid}" height="200"></canvas></div>
+  `;
+  el.appendChild(fc);
+
+  setTimeout(()=>{
+    const ctx=document.getElementById(fid); if(!ctx)return;
+    charts[fid]=new Chart(ctx,{
+      data:{labels,datasets:[
+        {type:'bar', label:'Receita Real',      data:recD,  backgroundColor:C.bar,  borderWidth:0, order:2},
+        {type:'line',label:'Receita Contratual',data:restD, borderColor:C.goldL,    borderWidth:2, borderDash:[5,3], pointRadius:0, tension:.3, fill:false, order:1},
+      ]},
+      options:chartOpts(v=>v!=null?'R$'+v.toFixed(1)+'k':'')
+    });
+    setupToggle(`tf-est-${name}`, charts[fid],1);
+  },80);
+
+  // Tabela mensal
+  const div=document.createElement('div'); div.className='divider'; el.appendChild(div);
+  const tt=document.createElement('div'); tt.className='section-title'; tt.style.fontSize='15px'; tt.textContent='Histórico Mensal'; el.appendChild(tt);
+
+  const hasComp = rows.some(r=>r.comp!=null);
+  const hasVur  = rows.some(r=>r.vur!=null);
+
+  let tbody='';
+  for (const r of [...rows].reverse()) {
+    if (r.conc==null && r.contrat==null) continue;
+    const rt = r.contrat>0 ? r.conc/r.contrat : null;
+    const dv = rt!=null ? (rt-1)*100 : null;
+    tbody+=`<tr>
+      <td>${r.dateStr}</td>
+      <td>${r.conc!=null ? fmtMWh(r.conc) : '—'}</td>
+      <td>${r.contrat>0  ? fmtMWh(r.contrat) : '—'}</td>
+      <td>${r.p50!=null  ? fmtMWh(r.p50) : '—'}</td>
+      <td style="color:var(--gold-light);font-weight:600">${rt!=null ? fmtPct(rt) : '—'}</td>
+      <td class="${devClass(dv)}">${dv!=null ? (dv>=0?'+':'')+dv.toFixed(1)+'%' : '—'}</td>
+      ${hasComp?`<td>${r.comp!=null?fmtMWh(r.comp):'—'}</td>`:''}
+      ${hasVur ?`<td>${r.vur!=null?'R$ '+r.vur.toFixed(4):'—'}</td>`:''}
+    </tr>`;
+  }
+
+  const tc=document.createElement('div'); tc.className='table-card';
+  tc.innerHTML=`<div class="table-scroll"><table>
+    <thead><tr>
+      <th style="text-align:left">Mês</th>
+      <th>Injetada</th><th>Contratual</th><th>P50</th>
+      <th>Performance</th><th>Desvio</th>
+      ${hasComp?'<th>Compensada</th>':''}
+      ${hasVur ?'<th>VUR</th>':''}
+    </tr></thead>
+    <tbody>${tbody}</tbody>
+  </table></div>`;
+  el.appendChild(tc);
+}
+
+// ── INIT ─────────────────────────────────────────────────
+loadAll();
+</script>
+</body>
+</html>
