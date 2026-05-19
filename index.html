@@ -32,7 +32,7 @@ header{position:sticky;top:0;z-index:100;background:var(--bg2);border-bottom:1px
 main{flex:1;overflow-y:auto;padding:24px 28px 40px}
 .pb{display:flex;align-items:center;gap:10px;margin-bottom:22px;padding:12px 18px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);flex-wrap:wrap}
 .pb label{font-size:11px;color:var(--text3);letter-spacing:.06em;text-transform:uppercase}
-.pi{background:var(--bg4);border:1px solid var(--border2);border-radius:var(--r);padding:5px 9px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer}
+.pi{background:var(--bg4);border:1px solid var(--border2);border-radius:var(--r);padding:5px 9px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;color-scheme:dark}
 .pi:focus{outline:none;border-color:var(--gold)}
 .btn{padding:6px 14px;border-radius:var(--r);border:1px solid var(--border2);font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.05em;cursor:pointer;transition:all .15s;text-transform:uppercase}
 .bg{background:none;color:var(--text2)}.bg:hover{background:var(--bg4);color:var(--text)}
@@ -95,6 +95,7 @@ tr:hover td{background:var(--bg4)}
   <nav class="sidebar" id="sidebar">
     <div class="ss">Visao</div>
     <button class="ni active" data-panel="geral" onclick="showPanel('geral')">Visao Geral</button>
+    <button class="ni" data-panel="grupo" onclick="showPanel('grupo')">Analise por Grupo</button>
     <div class="ss">Usinas</div>
   </nav>
   <main id="mc"></main>
@@ -103,7 +104,7 @@ tr:hover td{background:var(--bg4)}
 var SID="1BGH0Lg_krU3zxAP7MnPmXgBcHH-D83qcPOow5nyYQTg";
 var GVIZ="https://docs.google.com/spreadsheets/d/"+SID+"/gviz/tq?tqx=out:csv&sheet=";
 var TODAY=new Date();TODAY.setDate(1);TODAY.setHours(0,0,0,0);
-var SHEETS=["Delmiro1","Paulistana1","Paulistana2","Paulistana3","Tiradentes","Jaicó1","Jaicó2","Jaicó3","Barcarena1","Barcarena2","Cametá4"];
+var SHEETS=["Delmiro1","Paulistana1","Paulistana2","Paulistana3","Tiradentes","Jaicós1","Jaicós2","Jaicós3","Barcarena1","Barcarena2","Cametá4"];
 var MNAMES=["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
 var MMAP={jan:0,fev:1,mar:2,abr:3,mai:4,jun:5,jul:6,ago:7,set:8,out:9,nov:10,dez:11};
 var C={goldL:"#E2C47A",green:"#4CAF7A",blue:"#4A90D9",purple:"#9B59B6",bar:"rgba(201,168,76,0.55)"};
@@ -249,14 +250,14 @@ function buildUI(){
   var noData=SHEETS.filter(function(n){return!allData[n]||!allData[n].length;});
   usinas.forEach(function(name){
     var btn=document.createElement("button");
-    btn.className="ni";btn.dataset.panel=name;btn.textContent=name;
+    btn.className="ni";btn.dataset.panel=name;btn.textContent=displayName(name);
     btn.onclick=function(){showPanel(name);};
     sidebar.appendChild(btn);
   });
   if(noData.length){
     var sec=document.createElement("div");sec.className="ss";sec.textContent="Em breve";sidebar.appendChild(sec);
     noData.forEach(function(name){
-      var btn=document.createElement("button");btn.className="ni nd";btn.textContent=name;btn.disabled=true;sidebar.appendChild(btn);
+      var btn=document.createElement("button");btn.className="ni nd";btn.textContent=displayName(name);btn.disabled=true;sidebar.appendChild(btn);
     });
   }
   showPanel("geral");
@@ -267,7 +268,7 @@ function showPanel(name){
   Object.keys(charts).forEach(killChart);
   var mc=document.getElementById("mc");mc.innerHTML="";
   mc.appendChild(buildPeriodBar());
-  if(name==="geral")renderGeral(mc);else renderUsina(name,mc);
+  if(name==="geral")renderGeral(mc);else if(name==="grupo")renderGrupo(mc);else renderUsina(name,mc);
 }
 function buildPeriodBar(){
   var allDates=[];
@@ -326,6 +327,7 @@ function setupToggle(btnId,chart,idx){
   };
 }
 function sum(rows,key){return rows.reduce(function(a,r){return a+(r[key]||0);},0);}
+function displayName(name){return name.replace(/([A-Za-záéíóúãõâêôç]+)([0-9]+)$/,"$1 $2");}
 
 function renderGeral(el){
   var title=document.createElement("div");title.className="st";title.textContent="Visao Geral do Fundo";el.appendChild(title);
@@ -401,7 +403,7 @@ function renderGeral(el){
     var c=sum(rows,"conc"),ct=sum(rows,"contrat"),rx=rows.reduce(function(a,r){return a+(r.conc&&r.vur?r.conc*r.vur:0);},0);
     var rt=ct>0?c/ct:null,dv2=rt!=null?(rt-1)*100:null;
     var lastReal=null;for(var i=rows.length-1;i>=0;i--){if(rows[i].conc!=null){lastReal=rows[i];break;}}
-    tbody+="<tr><td>"+name+"</td><td>"+(c/1000).toLocaleString("pt-BR",{minimumFractionDigits:1,maximumFractionDigits:1})+" MWh</td><td>"+(ct>0?(ct/1000).toLocaleString("pt-BR",{minimumFractionDigits:1,maximumFractionDigits:1})+" MWh":"--")+"</td><td style='color:var(--gold-light);font-weight:600'>"+(rt!=null?fmtPct(rt):"--")+"</td><td class='"+devCls(dv2)+"'>"+(dv2!=null?(dv2>=0?"+":"")+dv2.toFixed(1)+"%":"--")+"</td><td>"+fmtBRL(rx)+"</td><td>"+(lastReal?lastReal.dateStr:"--")+"</td></tr>";
+    tbody+="<tr><td>"+displayName(name)+"</td><td>"+(c/1000).toLocaleString("pt-BR",{minimumFractionDigits:1,maximumFractionDigits:1})+" MWh</td><td>"+(ct>0?(ct/1000).toLocaleString("pt-BR",{minimumFractionDigits:1,maximumFractionDigits:1})+" MWh":"--")+"</td><td style='color:var(--gold-light);font-weight:600'>"+(rt!=null?fmtPct(rt):"--")+"</td><td class='"+devCls(dv2)+"'>"+(dv2!=null?(dv2>=0?"+":"")+dv2.toFixed(1)+"%":"--")+"</td><td>"+fmtBRL(rx)+"</td><td>"+(lastReal?lastReal.dateStr:"--")+"</td></tr>";
   });
   var tc=document.createElement("div");tc.className="tcard";
   tc.innerHTML='<div class="tsc"><table><thead><tr><th style="text-align:left">Usina</th><th>Injetada</th><th>Contratual</th><th>Performance</th><th>Desvio</th><th>Receita Est.</th><th>Ultimo mes</th></tr></thead><tbody>'+tbody+'</tbody></table></div>';
@@ -414,7 +416,7 @@ function renderUsina(name,el){
   var rows=applyFilter(allRows);
   var isFullPeriod=toYM(filterStart)===toYM(new Date(Math.min.apply(null,allRows.map(function(r){return r.date;}))))&&toYM(filterEnd)===toYM(new Date(Math.max.apply(null,allRows.map(function(r){return r.date;}))));
   var pl=isFullPeriod?allRows[0].dateStr+" - "+allRows[allRows.length-1].dateStr:fmtDate(filterStart)+" - "+fmtDate(filterEnd);
-  var title=document.createElement("div");title.className="st";title.textContent=name;el.appendChild(title);
+  var title=document.createElement("div");title.className="st";title.textContent=displayName(name);el.appendChild(title);
   var totC=sum(rows,"conc"),totCt=sum(rows,"contrat"),totCp=sum(rows,"comp");
   var totRx=rows.reduce(function(a,r){return a+(r.conc&&r.vur?r.conc*r.vur:0);},0);
   var ratio=totCt>0?totC/totCt:null,devPct=ratio!=null?(ratio-1)*100:null;
@@ -489,6 +491,112 @@ function renderUsina(name,el){
   var tc=document.createElement("div");tc.className="tcard";
   tc.innerHTML='<div class="tsc"><table><thead><tr><th style="text-align:left">Mes</th><th>Injetada</th><th>Contratual</th><th>P50</th><th>Performance</th><th>Desvio</th>'+(hasComp?"<th>Compensada</th>":"")+(hasVur?"<th>VUR</th>":"")+'</tr></thead><tbody>'+tbody+'</tbody></table></div>';
   el.appendChild(tc);
+}
+
+function renderGrupo(el){
+  var title=document.createElement("div");title.className="st";title.textContent="Analise por Grupo";el.appendChild(title);
+  var allUsinas=SHEETS.filter(function(n){return allData[n]&&allData[n].length>0;});
+  // Checkboxes
+  var selDiv=document.createElement("div");
+  selDiv.style.cssText="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;margin-bottom:16px;";
+  var selLabel=document.createElement("div");selLabel.className="ct";selLabel.textContent="Selecione as usinas";
+  selDiv.appendChild(selLabel);
+  var cbDiv=document.createElement("div");cbDiv.style.cssText="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;";
+  allUsinas.forEach(function(name){
+    var lbl=document.createElement("label");
+    lbl.style.cssText="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12.5px;color:var(--text2);padding:5px 10px;border:1px solid var(--border2);border-radius:2px;background:var(--bg4);";
+    var cb=document.createElement("input");cb.type="checkbox";cb.value=name;cb.style.accentColor="var(--gold)";
+    lbl.appendChild(cb);lbl.appendChild(document.createTextNode(displayName(name)));
+    cbDiv.appendChild(lbl);
+  });
+  selDiv.appendChild(cbDiv);
+  var applyBtn=document.createElement("button");applyBtn.className="btn bgo";applyBtn.textContent="Aplicar";
+  selDiv.appendChild(applyBtn);
+  el.appendChild(selDiv);
+  var resultDiv=document.createElement("div");el.appendChild(resultDiv);
+  applyBtn.onclick=function(){
+    var selected=Array.from(cbDiv.querySelectorAll("input:checked")).map(function(cb){return cb.value;});
+    resultDiv.innerHTML="";
+    Object.keys(charts).forEach(killChart);
+    if(!selected.length){
+      resultDiv.innerHTML='<div style="color:var(--text3);padding:16px">Selecione ao menos uma usina.</div>';
+      return;
+    }
+    // KPIs
+    var totC=0,totCt=0,totCp=0,totRec=0;
+    var mmap={};
+    selected.forEach(function(name){
+      var rows=applyFilter(allData[name]);
+      rows.forEach(function(r){
+        if(r.conc!=null)totC+=r.conc;
+        if(r.contrat!=null)totCt+=r.contrat;
+        if(r.comp!=null)totCp+=r.comp;
+        if(r.conc!=null&&r.vur!=null)totRec+=r.conc*r.vur;
+        var k=r.dateStr;
+        if(!mmap[k])mmap[k]={date:r.date,dateStr:r.dateStr,conc:0,contrat:0,p50:0,p50n:0,p75:0,p75n:0,media:0,median:0};
+        if(r.conc!=null)mmap[k].conc+=r.conc;
+        if(r.contrat!=null)mmap[k].contrat+=r.contrat;
+        if(r.p50!=null){mmap[k].p50+=r.p50;mmap[k].p50n++;}
+        if(r.p75!=null){mmap[k].p75+=r.p75;mmap[k].p75n++;}
+        if(r.media!=null){mmap[k].media+=r.media;mmap[k].median++;}
+      });
+    });
+    var ratio=totCt>0?totC/totCt:null;
+    var devPct=ratio!=null?(ratio-1)*100:null;
+    var kg=document.createElement("div");kg.className="kg";
+    function kcard(label,val,unit,sub){return'<div class="kc"><div class="kl">'+label+'</div><div class="kv">'+val+'<span class="ku">'+unit+'</span></div><div class="ks">'+sub+'</div></div>';}
+    kg.innerHTML=
+      kcard("Energia Total Injetada",(totC/1000).toLocaleString("pt-BR",{minimumFractionDigits:1,maximumFractionDigits:1}),"MWh","Concessionaria - periodo filtrado")+
+      kcard("Energia Contratual",(totCt/1000).toLocaleString("pt-BR",{minimumFractionDigits:1,maximumFractionDigits:1}),"MWh","Total contratado no periodo")+
+      kcard("Energia Compensada",(totCp/1000).toLocaleString("pt-BR",{minimumFractionDigits:1,maximumFractionDigits:1}),"MWh","Total compensada no periodo")+
+      kcard("Receita Total Estimada",fmtBRL(totRec),"","VUR x Criterio de remuneracao")+
+      '<div class="kc"><div class="kl">Performance Geral</div><div class="kd">'+(devPct!=null?(devPct>=0?"+":"")+devPct.toFixed(1)+"%":"--")+'</div><div class="kp '+devCls(devPct)+'">'+(ratio!=null?fmtPct(ratio)+" do contratual":"--")+'</div></div>';
+    resultDiv.appendChild(kg);
+    // Chart
+    var months=Object.values(mmap).sort(function(a,b){return a.date-b.date;});
+    var labels=months.map(function(m){return m.dateStr;});
+    var concArr=months.map(function(m){return m.conc/1000;});
+    var ctArr=months.map(function(m){return m.contrat>0?m.contrat/1000:null;});
+    var p50Arr=months.map(function(m){return m.p50n>0?m.p50/1000:null;});
+    var p75Arr=months.map(function(m){return m.p75n>0?m.p75/1000:null;});
+    var mediaArr=months.map(function(m){return m.median>0?m.media/1000:null;});
+    var gc=document.createElement("div");gc.className="cc";
+    gc.innerHTML='<div class="ct">Geracao Consolidada (MWh)</div><div class="cto"><button class="tb on" id="ggct">Contratual</button><button class="tb" id="ggp50">P50</button><button class="tb" id="ggp75">P75</button><button class="tb" id="ggmed">Media P50-P75</button></div>';
+    var gcw=document.createElement("div");gcw.className="cw";gcw.style.height="260px";
+    var gcv=document.createElement("canvas");
+    gcw.appendChild(gcv);gc.appendChild(gcw);
+    resultDiv.appendChild(gc);
+    setTimeout(function(){
+      charts["gg"]=new Chart(gcv,{
+        data:{labels:labels,datasets:[
+          {type:"bar",label:"Injetada",data:concArr,backgroundColor:C.bar,borderWidth:0,order:3},
+          {type:"line",label:"Contratual",data:ctArr,borderColor:C.goldL,borderWidth:2,borderDash:[5,3],pointRadius:0,tension:.3,fill:false,order:1},
+          {type:"line",label:"P50",data:p50Arr,borderColor:C.green,borderWidth:1.5,pointRadius:0,tension:.3,fill:false,order:2,hidden:true},
+          {type:"line",label:"P75",data:p75Arr,borderColor:C.purple,borderWidth:1.5,pointRadius:0,tension:.3,fill:false,order:2,hidden:true},
+          {type:"line",label:"Media P50-P75",data:mediaArr,borderColor:C.blue,borderWidth:1.5,pointRadius:0,tension:.3,fill:false,order:2,hidden:true}
+        ]},
+        options:chartOpts(function(v){return v!=null?v.toLocaleString("pt-BR",{maximumFractionDigits:1})+" MWh":"";})
+      });
+      setupToggle("ggct",charts["gg"],1);
+      setupToggle("ggp50",charts["gg"],2);
+      setupToggle("ggp75",charts["gg"],3);
+      setupToggle("ggmed",charts["gg"],4);
+    },50);
+    // Resumo por usina
+    var dv=document.createElement("div");dv.className="dv";resultDiv.appendChild(dv);
+    var tt=document.createElement("div");tt.className="st";tt.style.fontSize="16px";tt.textContent="Resumo por Usina";resultDiv.appendChild(tt);
+    var tbody="";
+    selected.forEach(function(name){
+      var rows=applyFilter(allData[name]);
+      var c=sum(rows,"conc"),ct=sum(rows,"contrat"),rx=rows.reduce(function(a,r){return a+(r.conc&&r.vur?r.conc*r.vur:0);},0);
+      var rt=ct>0?c/ct:null,dv2=rt!=null?(rt-1)*100:null;
+      var lastReal=null;for(var i=rows.length-1;i>=0;i--){if(rows[i].conc!=null){lastReal=rows[i];break;}}
+      tbody+="<tr><td>"+displayName(name)+"</td><td>"+(c/1000).toLocaleString("pt-BR",{minimumFractionDigits:1,maximumFractionDigits:1})+" MWh</td><td>"+(ct>0?(ct/1000).toLocaleString("pt-BR",{minimumFractionDigits:1,maximumFractionDigits:1})+" MWh":"--")+"</td><td style='color:var(--gold-light);font-weight:600'>"+(rt!=null?fmtPct(rt):"--")+"</td><td class='"+devCls(dv2)+"'>"+(dv2!=null?(dv2>=0?"+":"")+dv2.toFixed(1)+"%":"--")+"</td><td>"+fmtBRL(rx)+"</td><td>"+(lastReal?lastReal.dateStr:"--")+"</td></tr>";
+    });
+    var tc=document.createElement("div");tc.className="tcard";
+    tc.innerHTML='<div class="tsc"><table><thead><tr><th style="text-align:left">Usina</th><th>Injetada</th><th>Contratual</th><th>Performance</th><th>Desvio</th><th>Receita Est.</th><th>Ultimo mes</th></tr></thead><tbody>'+tbody+'</tbody></table></div>';
+    resultDiv.appendChild(tc);
+  };
 }
 
 loadAll();
