@@ -340,10 +340,11 @@ function renderGeral(el){
       if(r.comp!=null)totCp+=r.comp;
       if(r.conc!=null&&r.vur!=null)totRec+=r.conc*r.vur;
       var k=r.dateStr;
-      if(!mmap[k])mmap[k]={date:r.date,dateStr:r.dateStr,conc:0,contrat:0,p50:0,p50n:0};
+      if(!mmap[k])mmap[k]={date:r.date,dateStr:r.dateStr,conc:0,contrat:0,p50:0,p50n:0,p75:0,p75n:0};
       if(r.conc!=null)mmap[k].conc+=r.conc;
       if(r.contrat!=null)mmap[k].contrat+=r.contrat;
       if(r.p50!=null){mmap[k].p50+=r.p50;mmap[k].p50n++;}
+      if(r.p75!=null){mmap[k].p75+=r.p75;mmap[k].p75n++;}
     });
   });
   var ratio=totCt>0?totC/totCt:null;
@@ -364,9 +365,10 @@ function renderGeral(el){
   var concArr=months.map(function(m){return m.conc/1000;});
   var ctArr=months.map(function(m){return m.contrat>0?m.contrat/1000:null;});
   var p50Arr=months.map(function(m){return m.p50n>0?m.p50/1000:null;});
+  var p75Arr=months.map(function(m){return m.p75n>0?m.p75/1000:null;});
 
   var gc=document.createElement("div");gc.className="cc";
-  gc.innerHTML='<div class="ct">Geracao Consolidada (MWh)</div><div class="cto"><button class="tb on" id="tgct">Contratual</button><button class="tb on" id="tgp50">P50</button></div>';
+  gc.innerHTML='<div class="ct">Geracao Consolidada (MWh)</div><div class="cto"><button class="tb on" id="tgct">Contratual</button><button class="tb on" id="tgp50">P50</button><button class="tb" id="tgp75">P75</button></div>';
   var gcw=document.createElement("div");gcw.className="cw";gcw.style.height="260px";
   var gcv=document.createElement("canvas");
   gcw.appendChild(gcv);gc.appendChild(gcw);
@@ -377,12 +379,14 @@ function renderGeral(el){
       data:{labels:labels,datasets:[
         {type:"bar",label:"Injetada",data:concArr,backgroundColor:C.bar,borderWidth:0,order:3},
         {type:"line",label:"Contratual",data:ctArr,borderColor:C.goldL,borderWidth:2,borderDash:[5,3],pointRadius:0,tension:.3,fill:false,order:1},
-        {type:"line",label:"P50",data:p50Arr,borderColor:C.green,borderWidth:1.5,pointRadius:0,tension:.3,fill:false,order:2}
+        {type:"line",label:"P50",data:p50Arr,borderColor:C.green,borderWidth:1.5,pointRadius:0,tension:.3,fill:false,order:2},
+        {type:"line",label:"P75",data:p75Arr,borderColor:C.purple,borderWidth:1.5,pointRadius:0,tension:.3,fill:false,order:2,hidden:true}
       ]},
       options:chartOpts(function(v){return v!=null?v.toLocaleString("pt-BR",{maximumFractionDigits:1})+" MWh":"";})
     });
     setupToggle("tgct",charts["cg"],1);
     setupToggle("tgp50",charts["cg"],2);
+    setupToggle("tgp75",charts["cg"],3);
   },50);
 
   var dv=document.createElement("div");dv.className="dv";el.appendChild(dv);
@@ -452,14 +456,14 @@ function renderUsina(name,el){
   var restD=rows.map(function(r){return r.contrat>0&&r.vur!=null?r.contrat*r.vur/1000:null;});
   var fid="fc"+name.replace(/[^a-z0-9]/gi,"");
   var fc=document.createElement("div");fc.className="cc";
-  fc.innerHTML='<div class="ct">Receita Estimada (R$ mil)</div><div class="cto"><button class="tb on" id="fct'+name+'">Receita Contratual</button></div><div class="cw" style="height:220px"><canvas id="'+fid+'"></canvas></div>';
+  fc.innerHTML='<div class="ct">Receita Estimada (R$ mil)</div><div class="cto"><button class="tb on" id="fct'+name+'">Contratual x VUR</button></div><div class="cw" style="height:220px"><canvas id="'+fid+'"></canvas></div>';
   el.appendChild(fc);
   setTimeout(function(){
     var ctx=document.getElementById(fid);if(!ctx)return;
     charts[fid]=new Chart(ctx,{
       data:{labels:labels,datasets:[
         {type:"bar",label:"Receita Real",data:recD,backgroundColor:C.bar,borderWidth:0,order:2},
-        {type:"line",label:"Receita Contratual",data:restD,borderColor:C.goldL,borderWidth:2,borderDash:[5,3],pointRadius:0,tension:.3,fill:false,order:1}
+        {type:"line",label:"Contratual x VUR",data:restD,borderColor:C.goldL,borderWidth:2,borderDash:[5,3],pointRadius:0,tension:.3,fill:false,order:1}
       ]},
       options:chartOpts(function(v){return v!=null?"R$"+v.toFixed(1)+"k":"";})
     });
