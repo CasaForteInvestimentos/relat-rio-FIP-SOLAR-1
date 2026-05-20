@@ -357,9 +357,21 @@ function buildPerfKpi(cardId,rows,title){
     totals[o.key]=n>0?t:0;
   });
   var totConc=0;rows.forEach(function(r){if(r.conc!=null)totConc+=r.conc;});
+
   var div=document.createElement("div");
   div.className="kc";div.id=cardId;
-  function render(activeKey){
+
+  var optHtml=PERF_OPTS.map(function(o){
+    return'<option value="'+o.key+'"'+(totals[o.key]>0?'':' disabled')+'>'+o.label+'</option>';
+  }).join('');
+
+  div.innerHTML=
+    '<div class="kl">'+title+'</div>'+
+    '<div class="kd" id="'+cardId+'_val">--</div>'+
+    '<div class="kp" id="'+cardId+'_sub">--</div>'+
+    '<select id="'+cardId+'_sel" style="margin-top:10px;width:100%;background:var(--bg4);border:1px solid var(--border2);border-radius:var(--r);padding:4px 8px;color:var(--gold-light);font-family:\'DM Sans\',sans-serif;font-size:11px;cursor:pointer;color-scheme:dark;outline:none;">'+optHtml+'</select>';
+
+  function update(activeKey){
     var devPct,subtitle;
     if(activeKey==='comp'){
       var ratioComp=totConc>0?totals['comp']/totConc:null;
@@ -372,17 +384,15 @@ function buildPerfKpi(cardId,rows,title){
       var activeOpt=PERF_OPTS.find(function(o){return o.key===activeKey;});
       subtitle=ratio!=null?fmtPct(ratio)+' do '+activeOpt.label:'--';
     }
-    var optHtml=PERF_OPTS.map(function(o){
-      return'<option value="'+o.key+'"'+(o.key===activeKey?' selected':'')+(totals[o.key]>0?'':' disabled')+'>'+o.label+'</option>';
-    }).join('');
-    div.innerHTML=
-      '<div class="kl">'+title+'</div>'+
-      '<div class="kd">'+(devPct!=null?(devPct>=0?'+':'')+devPct.toFixed(1)+'%':'--')+'</div>'+
-      '<div class="kp '+devCls(devPct)+'">'+subtitle+'</div>'+
-      '<select style="margin-top:10px;width:100%;background:var(--bg4);border:1px solid var(--border2);border-radius:var(--r);padding:4px 8px;color:var(--gold-light);font-family:\'DM Sans\',sans-serif;font-size:11px;cursor:pointer;color-scheme:dark;outline:none;">'+optHtml+'</select>';
-    div.querySelector('select').addEventListener('change',function(e){render(e.target.value);});
+    var valEl=div.querySelector('#'+cardId+'_val');
+    var subEl=div.querySelector('#'+cardId+'_sub');
+    valEl.textContent=devPct!=null?(devPct>=0?'+':'')+devPct.toFixed(1)+'%':'--';
+    subEl.textContent=subtitle;
+    subEl.className='kp '+(devPct!=null?devCls(devPct):'');
   }
-  render('contrat');
+
+  update('contrat');
+  div.querySelector('#'+cardId+'_sel').addEventListener('change',function(e){update(e.target.value);});
   return div;
 }
 // ---------- end Performance KPI helpers ----------
