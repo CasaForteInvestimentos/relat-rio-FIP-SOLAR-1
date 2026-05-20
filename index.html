@@ -364,14 +364,20 @@ function buildPerfKpi(cardId,rows,title){
     var ratio=den>0?totConc/den:null;
     var devPct=ratio!=null?(ratio-1)*100:null;
     var activeOpt=PERF_OPTS.find(function(o){return o.key===activeKey;});
+    var subtitle;
+    if(activeKey==='comp'){
+      subtitle=ratio!=null?fmtPct(ratio)+' da injetada foi compensada':'--';
+    } else {
+      subtitle=ratio!=null?fmtPct(ratio)+' do '+activeOpt.label:'--';
+    }
     var optHtml=PERF_OPTS.map(function(o){
       return'<option value="'+o.key+'"'+(o.key===activeKey?' selected':'')+(totals[o.key]>0?'':' disabled')+'>'+o.label+'</option>';
     }).join('');
     div.innerHTML=
       '<div class="kl">'+title+'</div>'+
-      '<select style="margin-bottom:10px;width:100%;background:var(--bg4);border:1px solid var(--border2);border-radius:var(--r);padding:4px 8px;color:var(--gold-light);font-family:\'DM Sans\',sans-serif;font-size:11px;cursor:pointer;color-scheme:dark;outline:none;">'+optHtml+'</select>'+
       '<div class="kd">'+(devPct!=null?(devPct>=0?'+':'')+devPct.toFixed(1)+'%':'--')+'</div>'+
-      '<div class="kp '+devCls(devPct)+'">'+(ratio!=null?fmtPct(ratio)+' do '+activeOpt.label:'--')+'</div>';
+      '<div class="kp '+devCls(devPct)+'">'+subtitle+'</div>'+
+      '<select style="margin-top:10px;width:100%;background:var(--bg4);border:1px solid var(--border2);border-radius:var(--r);padding:4px 8px;color:var(--gold-light);font-family:\'DM Sans\',sans-serif;font-size:11px;cursor:pointer;color-scheme:dark;outline:none;">'+optHtml+'</select>';
     div.querySelector('select').addEventListener('change',function(e){render(e.target.value);});
   }
   render('contrat');
