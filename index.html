@@ -366,7 +366,16 @@ function buildPerfKpi(cardId,rows,title){
     var activeOpt=PERF_OPTS.find(function(o){return o.key===activeKey;});
     var subtitle;
     if(activeKey==='comp'){
-      subtitle=ratio!=null?fmtPct(ratio)+' da injetada foi compensada':'--';
+      var ratioComp=totConc>0?totals['comp']/totConc:null;
+      var devPctComp=ratioComp!=null?(ratioComp-1)*100:null;
+      subtitle=ratioComp!=null?fmtPct(ratioComp)+' da injetada foi compensada':'--';
+      div.innerHTML=
+        '<div class="kl">'+title+'</div>'+
+        '<div class="kd">'+(devPctComp!=null?(devPctComp>=0?'+':'')+devPctComp.toFixed(1)+'%':'--')+'</div>'+
+        '<div class="kp '+devCls(devPctComp)+'">'+subtitle+'</div>'+
+        '<select style="margin-top:10px;width:100%;background:var(--bg4);border:1px solid var(--border2);border-radius:var(--r);padding:4px 8px;color:var(--gold-light);font-family:\'DM Sans\',sans-serif;font-size:11px;cursor:pointer;color-scheme:dark;outline:none;">'+optHtml+'</select>';
+      div.querySelector('select').addEventListener('change',function(e){render(e.target.value);});
+      return;
     } else {
       subtitle=ratio!=null?fmtPct(ratio)+' do '+activeOpt.label:'--';
     }
