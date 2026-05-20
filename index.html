@@ -350,7 +350,6 @@ function calcPerf(rows,denomKey){
   return{ratio:ratio,devPct:(ratio-1)*100};
 }
 function buildPerfKpi(cardId,rows,title){
-  // Build aggregated totals per option
   var totals={};
   PERF_OPTS.forEach(function(o){
     var t=0,n=0;
@@ -358,32 +357,24 @@ function buildPerfKpi(cardId,rows,title){
     totals[o.key]=n>0?t:0;
   });
   var totConc=0;rows.forEach(function(r){if(r.conc!=null)totConc+=r.conc;});
-
-  function renderPerfCard(activeKey){
+  var div=document.createElement("div");
+  div.className="kc";div.id=cardId;
+  function render(activeKey){
     var den=totals[activeKey];
     var ratio=den>0?totConc/den:null;
     var devPct=ratio!=null?(ratio-1)*100:null;
     var activeOpt=PERF_OPTS.find(function(o){return o.key===activeKey;});
-    var pillsHtml=PERF_OPTS.map(function(o){
-      var avail=totals[o.key]>0;
-      var isActive=o.key===activeKey;
-      var style=avail?"":"opacity:.35;pointer-events:none;cursor:default;";
-      return'<button class="tb'+(isActive?" on":"")+(avail?"":" nd")+'" data-perfkey="'+o.key+'" style="'+style+'font-size:9px;padding:3px 8px;">'+o.label+'</button>';
-    }).join("");
-    return'<div class="kl">'+title+'</div>'+
-      '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;">'+pillsHtml+'</div>'+
-      '<div class="kd">'+(devPct!=null?(devPct>=0?"+":"")+devPct.toFixed(1)+"%":"--")+'</div>'+
-      '<div class="kp '+devCls(devPct)+'">'+(ratio!=null?fmtPct(ratio)+" do "+activeOpt.label:"--")+'</div>';
+    var optHtml=PERF_OPTS.map(function(o){
+      return'<option value="'+o.key+'"'+(o.key===activeKey?' selected':'')+(totals[o.key]>0?'':' disabled')+'>'+o.label+'</option>';
+    }).join('');
+    div.innerHTML=
+      '<div class="kl">'+title+'</div>'+
+      '<select style="margin-bottom:10px;width:100%;background:var(--bg4);border:1px solid var(--border2);border-radius:var(--r);padding:4px 8px;color:var(--gold-light);font-family:\'DM Sans\',sans-serif;font-size:11px;cursor:pointer;color-scheme:dark;outline:none;">'+optHtml+'</select>'+
+      '<div class="kd">'+(devPct!=null?(devPct>=0?'+':'')+devPct.toFixed(1)+'%':'--')+'</div>'+
+      '<div class="kp '+devCls(devPct)+'">'+(ratio!=null?fmtPct(ratio)+' do '+activeOpt.label:'--')+'</div>';
+    div.querySelector('select').addEventListener('change',function(e){render(e.target.value);});
   }
-
-  var div=document.createElement("div");
-  div.className="kc";div.id=cardId;
-  div.innerHTML=renderPerfCard("contrat");
-  div.addEventListener("click",function(e){
-    var btn=e.target.closest("[data-perfkey]");
-    if(!btn||btn.classList.contains("nd"))return;
-    div.innerHTML=renderPerfCard(btn.dataset.perfkey);
-  });
+  render('contrat');
   return div;
 }
 // ---------- end Performance KPI helpers ----------
@@ -447,7 +438,7 @@ function renderGeral(el){
         {type:"line",label:"P50",data:p50Arr,borderColor:C.green,borderWidth:1.5,pointRadius:0,tension:.3,fill:false,order:2,hidden:true},
         {type:"line",label:"P75",data:p75Arr,borderColor:C.purple,borderWidth:1.5,pointRadius:0,tension:.3,fill:false,order:2,hidden:true},
         {type:"line",label:"Media P50-P75",data:mediaArr,borderColor:C.blue,borderWidth:1.5,pointRadius:0,tension:.3,fill:false,order:2,hidden:true},
-        {type:"line",label:"Compensada",data:compArrG,borderColor:"#E2A04A",borderWidth:1.5,borderDash:[3,3],pointRadius:0,tension:.3,fill:false,order:2,hidden:true}
+        {type:"line",label:"Compensada",data:compArrG,borderColor:"#4AC9C9",borderWidth:2.5,borderDash:[4,3],pointRadius:0,tension:.3,fill:false,order:2,hidden:true}
       ]},
       options:chartOpts(function(v){return v!=null?v.toLocaleString("pt-BR",{maximumFractionDigits:1})+" MWh":"";})
     });
@@ -513,7 +504,7 @@ function renderUsina(name,el){
         {type:"line",label:"P50",data:p50D,borderColor:C.green,borderWidth:1.5,pointRadius:0,tension:.3,fill:false,order:2,hidden:true},
         {type:"line",label:"P75",data:p75D,borderColor:C.blue,borderWidth:1.5,pointRadius:0,tension:.3,fill:false,order:3,hidden:true},
         {type:"line",label:"Media P50-P75",data:medD,borderColor:C.purple,borderWidth:1.5,pointRadius:0,tension:.3,fill:false,order:4,hidden:true,borderDash:[2,3]},
-        {type:"line",label:"Compensada",data:compD,borderColor:"#E2A04A",borderWidth:1.5,borderDash:[3,3],pointRadius:0,tension:.3,fill:false,order:4,hidden:true}
+        {type:"line",label:"Compensada",data:compD,borderColor:"#4AC9C9",borderWidth:2.5,borderDash:[4,3],pointRadius:0,tension:.3,fill:false,order:4,hidden:true}
       ]},
       options:chartOpts(function(v){return v!=null?v.toLocaleString("pt-BR",{maximumFractionDigits:1})+" MWh":"";})
     });
@@ -642,7 +633,7 @@ function renderGrupo(el){
           {type:"line",label:"P50",data:p50Arr,borderColor:C.green,borderWidth:1.5,pointRadius:0,tension:.3,fill:false,order:2,hidden:true},
           {type:"line",label:"P75",data:p75Arr,borderColor:C.purple,borderWidth:1.5,pointRadius:0,tension:.3,fill:false,order:2,hidden:true},
           {type:"line",label:"Media P50-P75",data:mediaArr,borderColor:C.blue,borderWidth:1.5,pointRadius:0,tension:.3,fill:false,order:2,hidden:true},
-          {type:"line",label:"Compensada",data:compArrGG,borderColor:"#E2A04A",borderWidth:1.5,borderDash:[3,3],pointRadius:0,tension:.3,fill:false,order:2,hidden:true}
+          {type:"line",label:"Compensada",data:compArrGG,borderColor:"#4AC9C9",borderWidth:2.5,borderDash:[4,3],pointRadius:0,tension:.3,fill:false,order:2,hidden:true}
         ]},
         options:chartOpts(function(v){return v!=null?v.toLocaleString("pt-BR",{maximumFractionDigits:1})+" MWh":"";})
       });
